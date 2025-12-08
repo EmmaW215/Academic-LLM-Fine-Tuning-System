@@ -2,6 +2,8 @@
 
 A comprehensive system for building a custom academic Q&A assistant using RAG (Retrieval Augmented Generation) and QLoRA fine-tuning.
 
+<img width="1289" height="850" alt="image" src="https://github.com/user-attachments/assets/f6bfbdcb-8731-4b34-b418-d8cfbbefc415" />
+
 ## 🚀 Features
 
 - **Data Collection**: Automated arXiv paper scraping and PDF processing
