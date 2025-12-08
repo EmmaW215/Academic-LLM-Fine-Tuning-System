@@ -26,6 +26,7 @@ export default function ChatInterface() {
         use_rag: useRAG,
       })
 
+      // Handle both response formats
       const assistantMessage = response.message || response.response || 'No response received'
       setHistory([
         ...history,

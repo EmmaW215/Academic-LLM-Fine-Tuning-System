@@ -54,6 +54,59 @@ export interface ChatResponse {
   sources?: SearchResult[]
 }
 
+export interface DataCollectionRequest {
+  category?: string
+  query?: string
+  num_papers?: number
+}
+
+export interface DataCollectionResponse {
+  status: string
+  papers_collected: number
+  preview: string
+}
+
+export interface IndexBuildResponse {
+  status: string
+  chunks_indexed: number
+  documents_processed: number
+}
+
+export interface SyntheticDataRequest {
+  num_papers?: number
+  qa_per_paper?: number
+}
+
+export interface SyntheticDataResponse {
+  status: string
+  qa_pairs_generated: number
+  filepath: string
+  preview: string
+}
+
+export interface FineTuningRequest {
+  epochs?: number
+  batch_size?: number
+  learning_rate?: number
+}
+
+export interface FineTuningResponse {
+  status: string
+  train_loss?: number
+  train_runtime?: number
+  output_dir?: string
+  message: string
+}
+
+export interface PipelineStatus {
+  status: string
+  papers_collected: number
+  chunks_indexed: number
+  qa_pairs_generated: number
+  model_trained: boolean
+  last_updated?: string
+}
+
 export const apiClient = {
   // Health check
   async getHealth(): Promise<HealthStatus> {
@@ -89,6 +142,47 @@ export const apiClient = {
       params: { question },
     })
     return response.data.comparison
+  },
+
+  // Get pipeline status
+  async getStatus(): Promise<PipelineStatus> {
+    const response = await api.get<PipelineStatus>('/status')
+    return response.data
+  },
+
+  // Data collection
+  async collectPapers(request: DataCollectionRequest): Promise<DataCollectionResponse> {
+    const response = await api.post<DataCollectionResponse>('/collect', {
+      category: request.category || 'cs.CL',
+      query: request.query || null,
+      num_papers: request.num_papers || 50,
+    })
+    return response.data
+  },
+
+  // Build index
+  async buildIndex(): Promise<IndexBuildResponse> {
+    const response = await api.post<IndexBuildResponse>('/build-index')
+    return response.data
+  },
+
+  // Generate synthetic data
+  async generateSynthetic(request: SyntheticDataRequest): Promise<SyntheticDataResponse> {
+    const response = await api.post<SyntheticDataResponse>('/generate-synthetic', {
+      num_papers: request.num_papers || 50,
+      qa_per_paper: request.qa_per_paper || 5,
+    })
+    return response.data
+  },
+
+  // Fine-tune model
+  async finetune(request: FineTuningRequest): Promise<FineTuningResponse> {
+    const response = await api.post<FineTuningResponse>('/finetune', {
+      epochs: request.epochs || 3,
+      batch_size: request.batch_size || 2,
+      learning_rate: request.learning_rate || 0.0002,
+    })
+    return response.data
   },
 }
 

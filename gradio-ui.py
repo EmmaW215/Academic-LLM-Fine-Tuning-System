@@ -146,6 +146,19 @@ class AcademicLLMInterface:
             self.indexer.save("academic_index")
             
             progress(0.9, desc="Adding to SQLite FTS...")
+            # Reconnect to ensure fresh connection
+            if self.sqlite_fts.conn:
+                self.sqlite_fts.close()
+            self.sqlite_fts.connect()
+            
+            # Check database integrity before adding data
+            if not self.sqlite_fts.check_integrity():
+                logger.warning("Database integrity check failed, clearing old data...")
+                self.sqlite_fts.clear_all_data()
+            else:
+                # Just ensure tables exist
+                self.sqlite_fts.create_tables()
+            
             self.sqlite_fts.add_chunks_batch(all_chunks)
             
             # Setup hybrid retriever

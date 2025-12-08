@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { PenTool, Loader2 } from 'lucide-react'
+import { apiClient } from '@/lib/api'
 
 export default function SyntheticData() {
   const [numPapers, setNumPapers] = useState(50)
@@ -12,17 +13,35 @@ export default function SyntheticData() {
 
   const handleGenerate = async () => {
     setLoading(true)
-    setStatus('This feature requires backend API endpoints for synthetic data generation.')
-    setPreview('Please use the Gradio UI for synthetic data generation, or add API endpoints to the backend.')
-    setLoading(false)
+    setStatus('Starting synthetic data generation...')
+    setPreview('')
+
+    try {
+      const response = await apiClient.generateSynthetic({
+        num_papers: numPapers,
+        qa_per_paper: qaPerPaper,
+      })
+      setStatus(response.status)
+      setPreview(response.preview)
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || error.message || 'An error occurred'
+      setStatus(`❌ Error: ${errorMessage}`)
+      if (errorMessage.includes('API key')) {
+        setPreview('💡 Please set OPENAI_API_KEY environment variable on the backend server.')
+      } else {
+        setPreview('')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="space-y-4">
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <p className="text-sm text-yellow-800 dark:text-yellow-200">
-          <strong>Note:</strong> Synthetic data generation requires OpenAI API and backend support.
-          For now, please use the Gradio UI for this feature, or we can add API endpoints to support it.
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          <strong>Note:</strong> Synthetic data generation runs in the background and may take a while.
+          Requires OPENAI_API_KEY to be set on the backend server.
         </p>
       </div>
 

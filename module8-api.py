@@ -78,6 +78,50 @@ class PipelineStatus(BaseModel):
     last_updated: Optional[str] = None
 
 
+class DataCollectionRequest(BaseModel):
+    category: str = Field(default="cs.CL", description="arXiv category")
+    query: Optional[str] = Field(default=None, description="Search query")
+    num_papers: int = Field(default=50, ge=10, le=100, description="Number of papers to collect")
+
+
+class DataCollectionResponse(BaseModel):
+    status: str
+    papers_collected: int
+    preview: str = ""
+
+
+class IndexBuildResponse(BaseModel):
+    status: str
+    chunks_indexed: int
+    documents_processed: int
+
+
+class SyntheticDataRequest(BaseModel):
+    num_papers: int = Field(default=50, ge=10, le=100)
+    qa_per_paper: int = Field(default=5, ge=1, le=10)
+
+
+class SyntheticDataResponse(BaseModel):
+    status: str
+    qa_pairs_generated: int
+    filepath: str
+    preview: str = ""
+
+
+class FineTuningRequest(BaseModel):
+    epochs: int = Field(default=3, ge=1, le=10)
+    batch_size: int = Field(default=2, ge=1, le=8)
+    learning_rate: float = Field(default=0.0002, ge=0.0001, le=0.001)
+
+
+class FineTuningResponse(BaseModel):
+    status: str
+    train_loss: Optional[float] = None
+    train_runtime: Optional[float] = None
+    output_dir: Optional[str] = None
+    message: str
+
+
 # modules/m8_api_service/main.py
 """FastAPI application."""
 
@@ -359,11 +403,214 @@ Question: {request.message}"""
     # Pipeline status
     @app.get("/status", response_model=PipelineStatus)
     async def get_status():
+        from config.settings import DATA_DIR
+        import os
+        
+        # Count papers
+        papers_file = DATA_DIR / "processed" / "papers_metadata.json"
+        papers_count = 0
+        if papers_file.exists():
+            try:
+                import json
+                with open(papers_file) as f:
+                    papers = json.load(f)
+                    papers_count = len(papers) if isinstance(papers, list) else 0
+            except:
+                pass
+        
+        # Count QA pairs
+        qa_file = DATA_DIR / "synthetic" / "synthetic_qa.jsonl"
+        qa_count = 0
+        if qa_file.exists():
+            try:
+                with open(qa_file) as f:
+                    qa_count = sum(1 for _ in f)
+            except:
+                pass
+        
         return PipelineStatus(
             status="ready" if state.initialized else "initializing",
+            papers_collected=papers_count,
             chunks_indexed=state.faiss_indexer.index.ntotal if state.faiss_indexer else 0,
+            qa_pairs_generated=qa_count,
             model_trained=Path(state.config.training.output_dir).exists()
         )
+    
+    # Data collection endpoint
+    @app.post("/collect", response_model=DataCollectionResponse)
+    async def collect_papers(request: DataCollectionRequest, background_tasks: BackgroundTasks):
+        """Collect papers from arXiv."""
+        try:
+            from modules.m2_data_collection import ArxivScraper
+            
+            scraper = ArxivScraper()
+            
+            # Run in background
+            def collect_task():
+                papers = scraper.search_papers(
+                    category=request.category,
+                    query=request.query,
+                    max_results=request.num_papers
+                )
+                scraper.download_pdfs(papers)
+                scraper.save_metadata()
+                return len(papers)
+            
+            background_tasks.add_task(collect_task)
+            
+            return DataCollectionResponse(
+                status="✅ Paper collection started in background. This may take a few minutes.",
+                papers_collected=0,
+                preview="Collection in progress..."
+            )
+        except Exception as e:
+            logger.error(f"Collection error: {e}")
+            raise HTTPException(500, str(e))
+    
+    # Index building endpoint
+    @app.post("/build-index", response_model=IndexBuildResponse)
+    async def build_index(background_tasks: BackgroundTasks):
+        """Build RAG index from collected papers."""
+        try:
+            from modules.m2_data_collection import ArxivScraper, PDFExtractor
+            from modules.m3_rag_pipeline import DocumentChunker, EmbeddingGenerator, FAISSIndexer
+            from modules.m4_hybrid_retrieval import SQLiteFTS
+            
+            def build_task():
+                # Load papers
+                scraper = ArxivScraper()
+                papers = scraper.load_metadata()
+                
+                # Extract text
+                extractor = PDFExtractor()
+                pdf_paths = [p.local_pdf_path for p in papers if p.local_pdf_path]
+                metadata_list = [{"title": p.title, "arxiv_id": p.arxiv_id} for p in papers if p.local_pdf_path]
+                documents = extractor.extract_batch(pdf_paths, metadata_list)
+                
+                # Chunk
+                chunker = DocumentChunker()
+                all_chunks = []
+                for doc in documents:
+                    chunks = chunker.chunk_document(
+                        doc.arxiv_id,
+                        doc.full_text,
+                        {"title": doc.title}
+                    )
+                    all_chunks.extend(chunks)
+                
+                # Generate embeddings
+                embedder = EmbeddingGenerator()
+                embedder.load_model()
+                embeddings = embedder.embed_chunks(all_chunks)
+                
+                # Build FAISS index
+                indexer = FAISSIndexer(embedder.get_dimension())
+                indexer.create_index()
+                indexer.add_vectors(embeddings, all_chunks)
+                indexer.save("academic_index")
+                
+                # Build SQLite FTS
+                fts = SQLiteFTS()
+                fts.connect()
+                if not fts.check_integrity():
+                    fts.clear_all_data()
+                else:
+                    fts.create_tables()
+                fts.add_chunks_batch(all_chunks)
+                fts.close()
+                
+                return len(all_chunks), len(documents)
+            
+            background_tasks.add_task(build_task)
+            
+            return IndexBuildResponse(
+                status="✅ Index building started in background. This may take several minutes.",
+                chunks_indexed=0,
+                documents_processed=0
+            )
+        except Exception as e:
+            logger.error(f"Index building error: {e}")
+            raise HTTPException(500, str(e))
+    
+    # Synthetic data generation endpoint
+    @app.post("/generate-synthetic", response_model=SyntheticDataResponse)
+    async def generate_synthetic(request: SyntheticDataRequest, background_tasks: BackgroundTasks):
+        """Generate synthetic Q&A data."""
+        try:
+            from modules.m5_synthetic_data import QAGenerator, DatasetBuilder
+            from modules.m2_data_collection import ArxivScraper
+            
+            def generate_task():
+                scraper = ArxivScraper()
+                papers = scraper.load_metadata()[:request.num_papers]
+                
+                papers_dict = [
+                    {
+                        "arxiv_id": p.arxiv_id,
+                        "title": p.title,
+                        "abstract": p.abstract,
+                        "full_text": p.abstract
+                    }
+                    for p in papers
+                ]
+                
+                generator = QAGenerator()
+                qa_pairs = generator.generate_batch(
+                    papers_dict,
+                    qa_per_paper=request.qa_per_paper
+                )
+                
+                builder = DatasetBuilder()
+                dataset = builder.build_instruct_dataset(qa_pairs)
+                filepath = builder.save_jsonl(dataset)
+                
+                return len(qa_pairs), filepath
+            
+            background_tasks.add_task(generate_task)
+            
+            return SyntheticDataResponse(
+                status="✅ Synthetic data generation started in background. This may take a while.",
+                qa_pairs_generated=0,
+                filepath="",
+                preview="Generation in progress..."
+            )
+        except Exception as e:
+            logger.error(f"Synthetic generation error: {e}")
+            error_msg = str(e)
+            if "API key" in error_msg.lower():
+                error_msg += "\n\n💡 Please set OPENAI_API_KEY environment variable."
+            raise HTTPException(500, error_msg)
+    
+    # Fine-tuning endpoint
+    @app.post("/finetune", response_model=FineTuningResponse)
+    async def finetune(request: FineTuningRequest, background_tasks: BackgroundTasks):
+        """Start fine-tuning process."""
+        try:
+            from modules.m6_fine_tuning import QLoRATrainer
+            
+            def train_task():
+                trainer = QLoRATrainer()
+                trainer.setup()
+                dataset = trainer.load_dataset()
+                results = trainer.train(
+                    dataset,
+                    epochs=request.epochs,
+                    batch_size=request.batch_size
+                )
+                return results
+            
+            background_tasks.add_task(train_task)
+            
+            return FineTuningResponse(
+                status="✅ Fine-tuning started in background. This will take a long time (hours).",
+                message="Training in progress. Check status endpoint for updates."
+            )
+        except Exception as e:
+            logger.error(f"Fine-tuning error: {e}")
+            error_msg = str(e)
+            if "dataset" in error_msg.lower() or "empty" in error_msg.lower():
+                error_msg += "\n\n💡 Please generate synthetic data first."
+            raise HTTPException(500, error_msg)
     
     return app
 

@@ -2,34 +2,60 @@
 
 import { useState } from 'react'
 import { Database, Download, Loader2 } from 'lucide-react'
+import { apiClient } from '@/lib/api'
 
 export default function DataCollection() {
   const [category, setCategory] = useState('cs.CL')
   const [query, setQuery] = useState('')
   const [numPapers, setNumPapers] = useState(50)
   const [loading, setLoading] = useState(false)
+  const [indexLoading, setIndexLoading] = useState(false)
   const [status, setStatus] = useState<string>('')
   const [preview, setPreview] = useState<string>('')
 
   const handleCollect = async () => {
     setLoading(true)
-    setStatus('This feature requires backend API endpoints for data collection.')
-    setPreview('Please use the Gradio UI for data collection, or add API endpoints to the backend.')
-    setLoading(false)
+    setStatus('Starting paper collection...')
+    setPreview('')
+
+    try {
+      const response = await apiClient.collectPapers({
+        category,
+        query: query || undefined,
+        num_papers: numPapers,
+      })
+      setStatus(response.status)
+      setPreview(response.preview)
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || error.message || 'An error occurred'
+      setStatus(`❌ Error: ${errorMessage}`)
+      setPreview('')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleBuildIndex = async () => {
-    setLoading(true)
-    setStatus('This feature requires backend API endpoints for index building.')
-    setLoading(false)
+    setIndexLoading(true)
+    setStatus('Starting index building...')
+
+    try {
+      const response = await apiClient.buildIndex()
+      setStatus(response.status)
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || error.message || 'An error occurred'
+      setStatus(`❌ Error: ${errorMessage}`)
+    } finally {
+      setIndexLoading(false)
+    }
   }
 
   return (
     <div className="space-y-6">
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <p className="text-sm text-yellow-800 dark:text-yellow-200">
-          <strong>Note:</strong> Data collection and index building are long-running tasks that require backend API endpoints.
-          For now, please use the Gradio UI (running on the GPU server) for these features, or we can add API endpoints to support them.
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          <strong>Note:</strong> Data collection and index building run in the background and may take several minutes.
+          You can check the status using the Status Card above.
         </p>
       </div>
 
@@ -106,10 +132,10 @@ export default function DataCollection() {
         <h3 className="text-lg font-semibold mb-4">Build RAG Index</h3>
         <button
           onClick={handleBuildIndex}
-          disabled={loading}
+          disabled={indexLoading || loading}
           className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          {loading ? (
+          {indexLoading ? (
             <>
               <Loader2 className="animate-spin h-5 w-5" />
               Building...

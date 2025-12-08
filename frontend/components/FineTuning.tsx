@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Wrench, Loader2 } from 'lucide-react'
+import { apiClient } from '@/lib/api'
 
 export default function FineTuning() {
   const [epochs, setEpochs] = useState(3)
@@ -12,17 +13,32 @@ export default function FineTuning() {
 
   const handleTrain = async () => {
     setLoading(true)
-    setStatus('This feature requires backend API endpoints for fine-tuning.')
-    setStatus('Fine-tuning is a long-running task that requires GPU resources. Please use the Gradio UI for this feature, or we can add API endpoints with job queue support.')
-    setLoading(false)
+    setStatus('Starting fine-tuning...')
+
+    try {
+      const response = await apiClient.finetune({
+        epochs,
+        batch_size: batchSize,
+        learning_rate: learningRate,
+      })
+      setStatus(response.status + '\n\n' + response.message)
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || error.message || 'An error occurred'
+      setStatus(`❌ Error: ${errorMessage}`)
+      if (errorMessage.includes('dataset') || errorMessage.includes('empty')) {
+        setStatus(`❌ Error: ${errorMessage}\n\n💡 Please generate synthetic data first.`)
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="space-y-4">
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <p className="text-sm text-yellow-800 dark:text-yellow-200">
-          <strong>Note:</strong> Fine-tuning is a long-running task that requires GPU resources and backend support.
-          For now, please use the Gradio UI for fine-tuning, or we can add API endpoints with job queue support.
+      <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+        <p className="text-sm text-orange-800 dark:text-orange-200">
+          <strong>Warning:</strong> Fine-tuning runs in the background and will take several hours.
+          Ensure you have generated synthetic data first. The process requires GPU resources.
         </p>
       </div>
 

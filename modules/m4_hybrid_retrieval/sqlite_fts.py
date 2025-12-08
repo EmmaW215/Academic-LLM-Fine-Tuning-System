@@ -21,8 +21,18 @@ class SQLiteFTS:
         
     def connect(self):
         """Connect to database."""
-        self.conn = sqlite3.connect(str(self.db_path))
+        # Close existing connection if any
+        if self.conn:
+            try:
+                self.conn.close()
+            except:
+                pass
+        
+        # Connect with timeout to handle locked databases
+        self.conn = sqlite3.connect(str(self.db_path), timeout=10.0)
         self.conn.row_factory = sqlite3.Row
+        # Enable WAL mode for better concurrency
+        self.conn.execute("PRAGMA journal_mode=WAL")
         
     def create_tables(self):
         """Create FTS5 tables."""
@@ -187,33 +197,85 @@ class SQLiteFTS:
     
     def search(self, query: str, top_k: int = 10) -> List[Dict]:
         """Search using FTS5."""
+        # Ensure connection is open
+        if self.conn is None:
+            self.connect()
+        
         cursor = self.conn.cursor()
         
         # Sanitize query to handle special characters
         sanitized_query = self._sanitize_fts5_query(query)
         
-        # FTS5 search with BM25 ranking
-        cursor.execute("""
-            SELECT chunk_id, doc_id, text, bm25(chunks_fts) as score
-            FROM chunks_fts
-            WHERE chunks_fts MATCH ?
-            ORDER BY score
-            LIMIT ?
-        """, (sanitized_query, top_k))
+        try:
+            # FTS5 search with BM25 ranking
+            cursor.execute("""
+                SELECT chunk_id, doc_id, text, bm25(chunks_fts) as score
+                FROM chunks_fts
+                WHERE chunks_fts MATCH ?
+                ORDER BY score
+                LIMIT ?
+            """, (sanitized_query, top_k))
+            
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    "chunk_id": row["chunk_id"],
+                    "doc_id": row["doc_id"],
+                    "text": row["text"],
+                    "score": -row["score"]  # BM25 returns negative scores, lower is better
+                })
+            
+            return results
+        except sqlite3.DatabaseError as e:
+            error_msg = str(e)
+            if "malformed" in error_msg.lower() or "corrupt" in error_msg.lower():
+                logger.error(f"Database corruption detected: {e}")
+                raise sqlite3.DatabaseError(
+                    "Database disk image is malformed. "
+                    "Please rebuild the RAG index by running 'Build RAG Index' again in the Data Collection tab."
+                )
+            raise
+    
+    def check_integrity(self) -> bool:
+        """Check database integrity."""
+        if self.conn is None:
+            self.connect()
         
-        results = []
-        for row in cursor.fetchall():
-            results.append({
-                "chunk_id": row["chunk_id"],
-                "doc_id": row["doc_id"],
-                "text": row["text"],
-                "score": -row["score"]  # BM25 returns negative scores, lower is better
-            })
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("PRAGMA integrity_check")
+            result = cursor.fetchone()[0]
+            return "ok" in result.lower()
+        except Exception as e:
+            logger.error(f"Integrity check failed: {e}")
+            return False
+    
+    def clear_all_data(self):
+        """Clear all data from database (useful when rebuilding index)."""
+        if self.conn is None:
+            self.connect()
         
-        return results
+        cursor = self.conn.cursor()
+        try:
+            # Drop and recreate tables
+            cursor.execute("DROP TABLE IF EXISTS chunks_fts")
+            cursor.execute("DROP TABLE IF EXISTS chunks")
+            cursor.execute("DROP TABLE IF EXISTS documents")
+            self.conn.commit()
+            # Recreate tables
+            self.create_tables()
+            logger.info("Cleared all data from SQLite database")
+        except Exception as e:
+            logger.error(f"Error clearing data: {e}")
+            self.conn.rollback()
+            raise
     
     def close(self):
         """Close database connection."""
         if self.conn:
-            self.conn.close()
+            try:
+                self.conn.close()
+            except:
+                pass
+            self.conn = None
 
