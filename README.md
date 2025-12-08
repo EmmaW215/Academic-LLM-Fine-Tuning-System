@@ -2,6 +2,8 @@
 
 A comprehensive system for building a custom academic Q&A assistant using RAG (Retrieval Augmented Generation) and QLoRA fine-tuning.
 
+<img width="1289" height="850" alt="image" src="https://github.com/user-attachments/assets/f6bfbdcb-8731-4b34-b418-d8cfbbefc415" />
+
 ## 🚀 Features
 
 - **Data Collection**: Automated arXiv paper scraping and PDF processing
@@ -16,25 +18,6 @@ A comprehensive system for building a custom academic Q&A assistant using RAG (R
 - Python 3.10+
 - CUDA-capable GPU (recommended)
 - OpenAI API key (for synthetic data generation)
-
-## 🛠️ Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/EmmaW215/Academic-LLM-Fine-Tuning-System.git
-cd Academic-LLM-Fine-Tuning-System
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements-file.txt
-```
-
-3. Set up environment variables:
-```bash
-cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
-```
 
 ## 🎯 Quick Start
 
@@ -104,4 +87,17 @@ This project is open source and available under the MIT License.
 - Built with [LangChain](https://www.langchain.com/)
 - Fine-tuning powered by [Unsloth](https://github.com/unslothai/unsloth)
 - UI built with [Gradio](https://www.gradio.app/)
+
+
+<img width="1092" height="1211" alt="image" src="https://github.com/user-attachments/assets/f8516e71-9e89-4dc3-8a06-7c3c71a022a5" />
+
+<img width="1092" height="1211" alt="image" src="https://github.com/user-attachments/assets/7f457901-4ce6-401c-bca8-cc5086d42137" />
+
+<img width="1092" height="1204" alt="image" src="https://github.com/user-attachments/assets/9ebf58d8-3233-4ac7-8de5-97ec60d27f7e" />
+
+<img width="1020" height="779" alt="image" src="https://github.com/user-attachments/assets/72e128d7-b087-4dc4-bb0a-98bd2b0e8bc7" />
+
+
+
+
 
