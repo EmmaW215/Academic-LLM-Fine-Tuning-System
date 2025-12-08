@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+ENV/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Storage and Data (large files)
+storage/data/raw/*.pdf
+storage/data/processed/*.json
+storage/data/synthetic/*.jsonl
+storage/indexes/faiss/*.faiss
+storage/indexes/faiss/*.pkl
+storage/indexes/sqlite/*.db
+storage/models/**/*
+!storage/models/.gitkeep
+
+# Logs
+*.log
+gradio.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Gradio
+.gradio/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+

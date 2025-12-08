@@ -1,0 +1,1 @@
+{"Name":"user-storage-prod","Prefix":"storage-prod-1066-1587-1763754134","UsePrefix":true,"Mounter":"rclone","FSPath":"","CapacityBytes":53687091200,"Options":"--dir-cache-time=10s"}
