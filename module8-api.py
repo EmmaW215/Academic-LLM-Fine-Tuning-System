@@ -1,10 +1,5 @@
-# modules/m8_api_service/__init__.py
-"""Module 8: FastAPI Service."""
-
-from .main import create_app
-
-__all__ = ["create_app"]
-
+# module8-api.py
+"""FastAPI Service - Standalone API server."""
 
 # modules/m8_api_service/schemas.py
 """Pydantic schemas for API."""
@@ -137,11 +132,9 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from config.settings import get_config, INDEX_DIR
-from .schemas import (
-    SearchRequest, SearchResponse, SearchResult,
-    ChatRequest, ChatResponse,
-    ComparisonResponse, PipelineStatus, ModelType
-)
+
+# All schema classes are defined above in this file, so we can use them directly
+# No need to import - they're already in the same namespace
 
 
 # Global state
