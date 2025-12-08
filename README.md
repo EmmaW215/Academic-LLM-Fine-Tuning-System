@@ -19,25 +19,6 @@ A comprehensive system for building a custom academic Q&A assistant using RAG (R
 - CUDA-capable GPU (recommended)
 - OpenAI API key (for synthetic data generation)
 
-## 🛠️ Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/EmmaW215/Academic-LLM-Fine-Tuning-System.git
-cd Academic-LLM-Fine-Tuning-System
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements-file.txt
-```
-
-3. Set up environment variables:
-```bash
-cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
-```
-
 ## 🎯 Quick Start
 
 ### Option 1: Gradio UI (Recommended for beginners)
