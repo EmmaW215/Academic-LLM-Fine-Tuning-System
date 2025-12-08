@@ -46,8 +46,10 @@ export interface ChatRequest {
 }
 
 export interface ChatResponse {
-  response: string
-  model_type: string
+  message?: string  // Some APIs return 'message'
+  response?: string  // Some APIs return 'response'
+  model_used?: string
+  model_type?: string
   latency_ms: number
   sources?: SearchResult[]
 }

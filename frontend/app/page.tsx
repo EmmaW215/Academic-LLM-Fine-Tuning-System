@@ -4,9 +4,13 @@ import { useState } from 'react'
 import ChatInterface from '@/components/ChatInterface'
 import SearchInterface from '@/components/SearchInterface'
 import StatusCard from '@/components/StatusCard'
+import InitializeSystem from '@/components/InitializeSystem'
+import DataCollection from '@/components/DataCollection'
+import SyntheticData from '@/components/SyntheticData'
+import FineTuning from '@/components/FineTuning'
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'chat' | 'search'>('chat')
+  const [activeTab, setActiveTab] = useState<'initialize' | 'data' | 'search' | 'synthetic' | 'finetune' | 'chat'>('initialize')
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
@@ -27,20 +31,30 @@ export default function Home() {
         {/* Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg mb-6">
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <nav className="flex -mb-px">
+            <nav className="flex -mb-px overflow-x-auto">
               <button
-                onClick={() => setActiveTab('chat')}
-                className={`py-4 px-6 font-medium text-sm ${
-                  activeTab === 'chat'
+                onClick={() => setActiveTab('initialize')}
+                className={`py-4 px-4 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'initialize'
                     ? 'border-b-2 border-primary-500 text-primary-600'
                     : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                💬 Chat & Compare
+                🚀 Initialize
+              </button>
+              <button
+                onClick={() => setActiveTab('data')}
+                className={`py-4 px-4 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'data'
+                    ? 'border-b-2 border-primary-500 text-primary-600'
+                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                📚 Data Collection
               </button>
               <button
                 onClick={() => setActiveTab('search')}
-                className={`py-4 px-6 font-medium text-sm ${
+                className={`py-4 px-4 font-medium text-sm whitespace-nowrap ${
                   activeTab === 'search'
                     ? 'border-b-2 border-primary-500 text-primary-600'
                     : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -48,12 +62,46 @@ export default function Home() {
               >
                 🔍 RAG Search
               </button>
+              <button
+                onClick={() => setActiveTab('synthetic')}
+                className={`py-4 px-4 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'synthetic'
+                    ? 'border-b-2 border-primary-500 text-primary-600'
+                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                ✏️ Synthetic Data
+              </button>
+              <button
+                onClick={() => setActiveTab('finetune')}
+                className={`py-4 px-4 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'finetune'
+                    ? 'border-b-2 border-primary-500 text-primary-600'
+                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                🔧 Fine-Tuning
+              </button>
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`py-4 px-4 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'chat'
+                    ? 'border-b-2 border-primary-500 text-primary-600'
+                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                💬 Chat & Compare
+              </button>
             </nav>
           </div>
 
           <div className="p-6">
-            {activeTab === 'chat' && <ChatInterface />}
+            {activeTab === 'initialize' && <InitializeSystem />}
+            {activeTab === 'data' && <DataCollection />}
             {activeTab === 'search' && <SearchInterface />}
+            {activeTab === 'synthetic' && <SyntheticData />}
+            {activeTab === 'finetune' && <FineTuning />}
+            {activeTab === 'chat' && <ChatInterface />}
           </div>
         </div>
       </div>

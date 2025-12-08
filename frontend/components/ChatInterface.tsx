@@ -26,10 +26,11 @@ export default function ChatInterface() {
         use_rag: useRAG,
       })
 
+      const assistantMessage = response.message || response.response || 'No response received'
       setHistory([
         ...history,
         { role: 'user', content: userMessage },
-        { role: 'assistant', content: response.response },
+        { role: 'assistant', content: assistantMessage },
       ])
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || 'An error occurred'
