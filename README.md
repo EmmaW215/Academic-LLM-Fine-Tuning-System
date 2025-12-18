@@ -89,15 +89,19 @@ This project is open source and available under the MIT License.
 - UI built with [Gradio](https://www.gradio.app/)
 
 
-<img width="1092" height="1211" alt="image" src="https://github.com/user-attachments/assets/f8516e71-9e89-4dc3-8a06-7c3c71a022a5" />
+<img width="1562" height="1190" alt="image" src="https://github.com/user-attachments/assets/d9f10e90-319a-4b1a-9d54-ba2a97ecaa9a" />
 
-<img width="1092" height="1211" alt="image" src="https://github.com/user-attachments/assets/7f457901-4ce6-401c-bca8-cc5086d42137" />
+<img width="1562" height="1190" alt="image" src="https://github.com/user-attachments/assets/0d6d4590-ef07-4730-9ae6-9e03bcdfd907" />
 
-<img width="1092" height="1204" alt="image" src="https://github.com/user-attachments/assets/9ebf58d8-3233-4ac7-8de5-97ec60d27f7e" />
+<img width="1562" height="1190" alt="image" src="https://github.com/user-attachments/assets/740ce92f-6e1f-47ae-8f28-2831c2c885cc" />
 
-<img width="1020" height="779" alt="image" src="https://github.com/user-attachments/assets/72e128d7-b087-4dc4-bb0a-98bd2b0e8bc7" />
+<img width="1562" height="778" alt="image" src="https://github.com/user-attachments/assets/671f9164-5a53-43e2-bb4e-603a008174be" />
 
+<img width="1562" height="1194" alt="image" src="https://github.com/user-attachments/assets/ad704d2b-d4c7-474a-a7cd-ea9bfb7dbe8f" />
 
+<img width="751" height="1131" alt="image" src="https://github.com/user-attachments/assets/71dbc42f-029d-443b-b4e5-a97fae7c545f" />
+
+<img width="751" height="1078" alt="image" src="https://github.com/user-attachments/assets/d8b04aa9-d61d-42b9-9ba3-e2bd461eb1f3" />
 
 
 
